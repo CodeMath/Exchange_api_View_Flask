@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://cdn.jsdelivr.net/npm/luxon@1.26.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.0.1/dist/chart.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.0.0"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@^1"></script>
+
+    <script src="{{ url_for('static', filename='chartjs-chart-financial.js')}}" type="text/javascript"></script>
+    <title>Open Chart</title>
+</head>
+
+<body>
+    <div style="width:100w;">
+        <canvas id="myChart"></canvas>
+    </div>
+
+
+    <script>
+        // initialy 3000 by bithumb API
+        var barCount = 60;
+        var initialDateStr = '';
+
+        var ctx = document.getElementById('myChart').getContext('2d');
+        ctx.canvas.width = 1800;
+        ctx.canvas.height = 450;
+
+        const getbarData = [];
+
+        var chart = new Chart(ctx, {
+            type: 'candlestick',
+            data: {
+                datasets: [{
+                    label: 'Bithumb BTC 5min',
+                    data: getbarData,
+                    color: {
+                        up: '#ff0019',
+                        down: '#0800ff',
+                        unchanged: '#999',
+                    }
+                }]
+            }
+        });
+
+
+        async function updater() {
+            const parseData = await getBTCData().then(() => {
+                chart.update();
+            }).catch((e) => console.log(e));
+        }
+
+
+        async function getBTCData() {
+            const response = await fetch("http://localhost:3000");
+            const responseJson = await response.json();
+            initialDateStr = await new Date(responseJson[0][0] / 1000);
+            for (var i = 0; i < barCount; i++) {
+                getbarData.push(btcdata(responseJson[i]));
+            }
+
+        }
+
+        function btcdata(btc_data) {
+            return {
+                x: btc_data[0],
+                o: Number(btc_data[1]),
+                c: Number(btc_data[3]),
+                h: Number(btc_data[2]),
+                l: Number(btc_data[4])
+            }
+        }
+
+
+
+        updater();
+
+    </script>
+</body>
+
+</html>
